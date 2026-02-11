@@ -3,23 +3,23 @@ USER root
 
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
-RUN curl -sSL https://github.com/pksunkara/pgx_ulid/releases/download/v0.2.2/pgx_ulid-v0.2.2-pg18-arm64-linux-gnu.deb -o pgx_ulid_18.deb && \
-    dpkg -i pgx_ulid_18.deb && \
-    rm pgx_ulid_18.deb
-RUN rm /usr/lib/postgresql/18/lib/pgx_ulid.so && \
-    cp /usr/lib/postgresql/lib/pgx_ulid.so /usr/lib/postgresql/18/lib/pgx_ulid.so
+RUN mkdir -p /tmp/ulid_build
 
-RUN mkdir -p /usr/lib/postgresql/17/lib
+RUN curl -sSL https://github.com/pksunkara/pgx_ulid/releases/download/v0.2.2/pgx_ulid-v0.2.2-pg18-arm64-linux-gnu.deb -o /tmp/ulid18.deb && \
+    dpkg -x /tmp/ulid18.deb /tmp/ulid18_files && \
+    cp -r /tmp/ulid18_files/usr/lib/postgresql/18/lib/* /usr/lib/postgresql/18/lib/ && \
+    cp -r /tmp/ulid18_files/usr/share/postgresql/18/extension/* /usr/share/postgresql/18/extension/
 
-RUN curl -sSL https://github.com/pksunkara/pgx_ulid/releases/download/v0.2.2/pgx_ulid-v0.2.2-pg17-arm64-linux-gnu.deb -o pgx_ulid_17.deb
+RUN mkdir -p /usr/lib/postgresql/17/lib /usr/share/postgresql/17/extension
+RUN curl -sSL https://github.com/pksunkara/pgx_ulid/releases/download/v0.2.2/pgx_ulid-v0.2.2-pg17-arm64-linux-gnu.deb -o /tmp/ulid17.deb && \
+    dpkg -x /tmp/ulid17.deb /tmp/ulid17_files && \
+    find /tmp/ulid17_files -name "pgx_ulid.so" -exec cp {} /usr/lib/postgresql/17/lib/ \; && \
+    find /tmp/ulid17_files -name "ulid*" -exec cp {} /usr/share/postgresql/17/extension/ \;
 
-RUN dpkg -x pgx_ulid_17.deb /tmp/pg17_ext
+RUN [ -L /usr/lib/postgresql/18/lib/pgx_ulid.so ] && rm /usr/lib/postgresql/18/lib/pgx_ulid.so || true
+RUN cp /usr/lib/postgresql/lib/pgx_ulid.so /usr/lib/postgresql/18/lib/pgx_ulid.so || true
 
-RUN find /tmp/pg17_ext -name "pgx_ulid.so" -exec cp {} /usr/lib/postgresql/17/lib/ \;
-
-RUN rm pgx_ulid_17.deb && rm -rf /tmp/pg17_ext
-
-RUN chmod 755 /usr/lib/postgresql/18/lib/pgx_ulid.so && \
-    chmod 755 /usr/lib/postgresql/17/lib/pgx_ulid.so
+RUN rm -rf /tmp/ulid*
+RUN chmod -R 755 /usr/lib/postgresql/17/lib/ /usr/lib/postgresql/18/lib/
 
 USER 26
