@@ -1,0 +1,4 @@
+FROM ghcr.io/cloudnative-pg/postgresql:17.6-system-bookworm
+USER root
+RUN apt-get update && apt-get install -y curl && curl -sSL https://github.com/pksunkara/pgx_ulid/releases/download/v0.2.2/pgx_ulid-v0.2.2-pg17-arm64-linux-gnu.deb -o pgx_ulid.deb && dpkg -i pgx_ulid.deb && rm pgx_ulid.deb && rm -rf /var/lib/apt/lists/*
+USER 26
